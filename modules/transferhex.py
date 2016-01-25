@@ -1,5 +1,9 @@
 #!/usr/bin/python
 # coding: latin-1
+try:
+    import RPi.GPIO as GPIO
+except:
+    print 'You need rpi-python-gpio module'
 import os
 import sys
 try:
@@ -13,8 +17,10 @@ except:
             \n If you are running ubuntu open a terminal and type:\
             \n sudo apt-get install python-gtk2  '
 
-def transfer_hex(gui,filename,port,baud,type,max_flash,family,rts):
-    
+#PUT YOU GPIO PIN NUMBER HERE
+GPIO_PIN=12
+
+def transfer_hex(gui,filename,port,baud,type,max_flash,family,rts,gpio):
     global s    
     s=serial.Serial(port,baud,timeout=1)
     
@@ -237,6 +243,10 @@ def transfer_hex(gui,filename,port,baud,type,max_flash,family,rts):
     c = l/hblock
     i=1
     
+    if gpio==True:
+	GPIO.setmode(GPIO.BOARD)
+	GPIO.setup(GPIO_PIN, GPIO.OUT)
+	GPIO.output(GPIO_PIN, GPIO.HIGH)
     for pic_pos in range(minpos,maxpos,block):
  
         mem_block=[255]*hblock
@@ -257,8 +267,7 @@ def transfer_hex(gui,filename,port,baud,type,max_flash,family,rts):
                 mem_block[j]=pic_mem[hex_pos]
                 write_block=True
                 
-        if write_block:
-            
+        if write_block:            
             progress = float(i)/float(c)
            
             if gui != None and progress<=1:
@@ -270,7 +279,8 @@ def transfer_hex(gui,filename,port,baud,type,max_flash,family,rts):
             ret=write_mem(pic_pos,mem_block,family,rts)
             if ret!="K":
                 return 'Fail'
-   
+    if gpio:
+	GPIO.output(GPIO_PIN, GPIO.LOW)
     s.close()
     
     return 'OK'

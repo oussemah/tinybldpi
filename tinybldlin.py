@@ -82,6 +82,8 @@ class Tinybldlin():
             self.progress_bar       = builder.get_object('progressbar')
             self.chunk_hexfile      = builder.get_object('chunk_hexfile')
             self.rts_checkbutton    = builder.get_object('rts_checkbutton')
+            self.gpio_checkbutton   = builder.get_object('gpio_checkbutton')
+
             
             self.open_terminal      = builder.get_object('open_terminal_button')
             self.close_terminal     = builder.get_object('close_terminal_button')
@@ -147,7 +149,6 @@ class Tinybldlin():
                 
                 speed_terminal=loadsavesettings.get_restore_settings("TERMINAL", "speed")
                 speed_terminal_entry.set_text(speed_terminal)
-                
             except:
                 print 'probably theres no .tinybld'
 
@@ -155,9 +156,7 @@ class Tinybldlin():
             self.want_to_abort=False
             self.close=0
             self.go=1
-            self.text_back=''
-            
-            
+            self.text_back=''            
         else:
             file,port,baud,rts,check= self.treat_args(options)
             print file,port,baud,rts,check
@@ -167,7 +166,7 @@ class Tinybldlin():
                 self.check_pic_terminal(port,baud,rts)
                 
             else:
-                self.tranfer_file(file,port,baud,rts)
+                self.tranfer_file(file,port,baud,rts,True)
             sys.exit()
             
     def on_browse_button_clicked(self,widget):
@@ -183,6 +182,10 @@ class Tinybldlin():
         BAUD=self.speed_combo.get_active_text()
         hex_file_path=self.hex_file_entry.get_text()
         
+	#Test of GPIO functionality
+	message='\nGPIO option is '+str(self.gpio_checkbutton.get_active())
+	self.write_message(message)
+
         #checking if there's port availeble
         c,message=detectpic.check_conection(PORT, BAUD)
 
@@ -257,9 +260,12 @@ class Tinybldlin():
         #Reset PIC by software
         rts=self.rts_checkbutton.get_active()
         
+	#Activate GPIO Pin while programming
+	gpio=self.gpio_checkbutton.get_active()
+
         start = time.time()
         #Transfering file
-        write_status=transferhex.transfer_hex(Tinybldlin,hex_file_path,PORT,BAUD,type,max_flash,family,rts)
+        write_status=transferhex.transfer_hex(Tinybldlin,hex_file_path,PORT,BAUD,type,max_flash,family,rts,gpio)
         end = time.time()
         
         if write_status=='OK':
@@ -371,7 +377,10 @@ class Tinybldlin():
         
     def on_rts_checkbutton_toggled(self, widget):
         return
-        
+
+    def on_gpio_checkbutton_toggled(self, widget):
+	return
+
     def set_model_from_list (self, cb, items):
         """Setup a ComboBox or ComboBoxEntry based on a list of strings."""           
         model = gtk.ListStore(str)
@@ -446,7 +455,7 @@ class Tinybldlin():
             
         return file,port,baud,rts,check
     
-    def tranfer_file(self,file,port,baud,rts):
+    def tranfer_file(self,file,port,baud,rts,gpio):
         begin=time.strftime("%H:%M", time.localtime())
         
         c,message=detectpic.check_conection(port, baud)
@@ -481,7 +490,7 @@ class Tinybldlin():
             
          
         start = time.time()
-        write_status=transferhex.transfer_hex(None,file,port,baud,type,max_flash,family,rts)
+        write_status=transferhex.transfer_hex(None,file,port,baud,type,max_flash,family,rts,gpio)
         end = time.time()
         
         
